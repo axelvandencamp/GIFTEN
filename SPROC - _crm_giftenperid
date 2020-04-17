@@ -18,17 +18,17 @@ BEGIN
 	RETURN QUERY 
 	SELECT MIN(SQ1.jaar) jaareerstegift,
 		MAX(SQ1.jaar) jaarlaatstegift,
-		MAX(SQ1.jaar) - MIN(SQ1.jaar) jarendonateur,
+		MAX(SQ1.jaar) - MIN(SQ1.jaar) +1 jarendonateur,
 		COUNT(SQ1.p_id) aantalgiften,
 		SUM(SQ1.amount) totaalgiften,
 		--MIN(SQ1.amount) kleinstegift,
 		MAX(SQ1.amount) grootstegift,
-		CASE WHEN MAX(SQ1.jaar) - MIN(SQ1.jaar) = 0 
-			THEN COUNT(SQ1.p_id) / 1
+		CASE WHEN MAX(SQ1.jaar) = MIN(SQ1.jaar)
+			THEN COUNT(SQ1.p_id) --/ 1
 			ELSE COUNT(SQ1.p_id) / (MAX(SQ1.jaar) - MIN(SQ1.jaar)) 
 		END avggiftenperjaar,
-		CASE WHEN MAX(SQ1.jaar) - MIN(SQ1.jaar) = 0 
-			THEN SUM(SQ1.amount) / 1
+		CASE WHEN MAX(SQ1.jaar) = MIN(SQ1.jaar)  
+			THEN SUM(SQ1.amount) --/ 1
 			ELSE SUM(SQ1.amount) / (MAX(SQ1.jaar) - MIN(SQ1.jaar)) 
 		END avgbedragperjaar
 	-- SELECT *
@@ -60,8 +60,7 @@ BEGIN
 			--link naar partner		
 			LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id
 		WHERE (aa.code = '732100' OR  aa.code = '732000')
-			--AND aml.date BETWEEN startdatum AND einddatum
-			--AND (p.active = 't' OR (p.active = 'f' AND COALESCE(p.deceased,'f') = 't'))	--van de inactieven enkele de overleden contacten meenemen
+			--AND p.id = 229710 --testwaarde
 		UNION ALL
 		SELECT 
 			null AS account_id,
@@ -85,8 +84,9 @@ BEGIN
 			--link naar partner		
 			LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id	
 		WHERE pph.project_nbr > '0' 
+			--AND p.id = 229710 --testwaarde
 		) SQ1
-	WHERE SQ1.p_id = partner_id_in --95932
+	WHERE SQ1.p_id = partner_id_in --229710 --
 	GROUP BY SQ1.p_id
 		;
 
