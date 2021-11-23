@@ -2,7 +2,7 @@
 -- SEPA-Giften
 -- opdrachten en facturen
 -----------------------------------------
-SELECT DISTINCT dpa.partner_id id, dpa.analytic_account_id, p.name, /*sm.sm_state sm_state,*/ dpa.interval_type, dpa.interval_number, dpa.donation_amount bedrag, /*ddl.invoice_id, i.state,*/ dpa.next_invoice_date, dpa.donation_start, dpa.last_invoice_date, dpa.donation_cancel,
+SELECT DISTINCT dpa.id, dpa.partner_id, dpa.analytic_account_id, p.name, /*sm.sm_state sm_state,*/ dpa.interval_type, dpa.interval_number, dpa.donation_amount bedrag, /*ddl.invoice_id, i.state,*/ dpa.next_invoice_date, dpa.donation_start, dpa.last_invoice_date, dpa.donation_cancel,
 	ddl.aanmaak_factuur, ddl.amount_total
 FROM res_partner p
 	JOIN donation_partner_account dpa ON p.id = dpa.partner_id
@@ -11,7 +11,7 @@ FROM res_partner p
 		ON dpa.partner_id = ddl.partner_id AND dpa.donation_amount = ddl.amount_total
 	--JOIN account_invoice i ON ddl.invoice_id = i.id
 --WHERE (dpa.next_invoice_date = '2017-03-01' OR dpa.donation_start = '2017-03-01') AND interval_type = 'M'
-WHERE interval_type = 'M' AND COALESCE(dpa.donation_cancel,'2099-12-31') = '2099-12-31' AND p.active AND COALESCE(dpa.next_invoice_date,'2021-01-01')>'2021-01-01'
+WHERE interval_type = 'J' AND COALESCE(dpa.donation_cancel,'2099-12-31') = '2099-12-31' AND p.active AND COALESCE(dpa.next_invoice_date,'2021-01-01')>'2021-01-01'
 	--AND dpa.donation_amount < 0
 --WHERE interval_type = 'M' AND COALESCE(dpa.donation_cancel,'2099-12-31') >= now()::date AND dpa.next_invoice_date > '2019-01-01' --AND p.active = 'false'
 --ORDER BY dpa.next_invoice_date
