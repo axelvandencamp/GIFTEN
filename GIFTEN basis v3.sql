@@ -287,6 +287,7 @@ INSERT INTO tempGIFTEN
 	ORDER BY pph.date); 
 /*
 SELECT * FROM tempGIFTEN
+SELECT SUM(amount), project FROM tempGIFTEN GROUP BY project
 --SELECT REPLACE(REPLACE(REPLACE(LOWER(description),' ',''),'mangopaysanpdonation',''),'koalect','') "transaction", * FROM tempGIFTEN --WHERE vzw LIKE '%Beheer%'
 --WHERE LOWER(description) LIKE '%triodos%' 
 --WHERE LOWER(afdeling) LIKE '%zuidrand%'
