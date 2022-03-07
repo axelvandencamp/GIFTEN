@@ -2,8 +2,9 @@
 
 -- DROP FUNCTION public._crm_giften(date, date);
 
-CREATE OR REPLACE FUNCTION public._crm_giften(
-    IN startdatum date,
+CREATE OR REPLACE FUNCTION marketing._crm_giften(
+    IN prm_partner_id integer,
+	IN startdatum date,
     IN einddatum date,
     OUT account_id integer,
     OUT date date,
@@ -170,6 +171,8 @@ BEGIN
 		LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id
 	WHERE (aa.code = '732100' OR  aa.code = '732000')
 		AND aml.date BETWEEN startdatum AND einddatum
+		AND (CASE 
+			 	WHEN COALESCE(prm_partner_id,0) > 0 THEN p.id = prm_partner_id ELSE p.id > 0END)
 		--AND (p.active = 't' OR (p.active = 'f' AND COALESCE(p.deceased,'f') = 't'))	--van de inactieven enkele de overleden contacten meenemen
 		--AND p.id = v.testID
 		;
@@ -180,8 +183,14 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
   ROWS 1000;
-ALTER FUNCTION public._crm_giften(date, date)
+ALTER FUNCTION marketing._crm_giften(integer, date, date)
   OWNER TO axelvandencamp;
-GRANT EXECUTE ON FUNCTION public._crm_giften(date, date) TO public;
-GRANT EXECUTE ON FUNCTION public._crm_giften(date, date) TO axelvandencamp;
-GRANT EXECUTE ON FUNCTION public._crm_giften(date, date) TO readonly;
+GRANT EXECUTE ON FUNCTION marketing._crm_giften(integer, date, date) TO public;
+GRANT EXECUTE ON FUNCTION marketing._crm_giften(integer, date, date) TO axelvandencamp;
+GRANT EXECUTE ON FUNCTION marketing._crm_giften(integer, date, date) TO readonly;
+
+
+--SELECT * FROM marketing._crm_giften(NULL,'2022-03-06','2022-03-07')
+
+
+
