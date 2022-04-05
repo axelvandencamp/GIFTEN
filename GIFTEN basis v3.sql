@@ -12,7 +12,7 @@
 DROP TABLE IF EXISTS myvar;
 SELECT 
 	'2021-01-01'::date AS startdatum,
-	'2021-12-31'::date AS einddatum,
+	'2022-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -425,16 +425,16 @@ WHERE amount >= 40
 --lijst unieke donateurs
 ------------------------
 /*
-SELECT DISTINCT partner_id, sum(amount) bedrag, min(date) min_date, max(date) max_date, jaar, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
+SELECT DISTINCT partner_id, sum(amount) bedrag, min(date) min_date, max(date) max_date, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status
 --SELECT *
 FROM tempGIFTEN 
 --WHERE postcode IN ('3070','3071','3078','1910','3020','1820','1800','1830','1831','1930','1932','1933','3000','3001','3010','3012','3018','3060','3061','3040','3150','3090','3091','3080','1000','1020','1050','1120','1130')
 --WHERE provincie in ('Antwerpen','Oost-Vlaanderen')
---WHERE project_code LIKE '%6684%' --AND naam LIKE 'Natuurpunt%'
+WHERE project_code LIKE '%6617%' --AND naam LIKE 'Natuurpunt%'
 --WHERE LOWER(description) LIKE 'mangopay sa np exp%' OR LOWER(description) LIKE 'mangopay sanp exp%' OR LOWER(description) LIKE '%expeditie%'
 --WHERE grootboekrek = '732000'
-GROUP BY partner_id, jaar, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
-ORDER BY partner_id, jaar --WHERE partner_id IN ('94626','19544')
+GROUP BY partner_id,  description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
+ORDER BY partner_id --WHERE partner_id IN ('94626','19544')
 --voor post overleden, post ontvangen en adres status uitfilteren
 --SELECT DISTINCT partner_id FROM tempGIFTEN
 

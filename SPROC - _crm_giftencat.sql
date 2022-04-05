@@ -1,10 +1,10 @@
--- Function: public._crm_giftencat(date, date)
 
--- DROP FUNCTION public._crm_giftencat(date, date);
+-- Function: public._crm_giftencat(text)
 
-CREATE OR REPLACE FUNCTION public._crm_giftencat(
-    IN startdatum date,
-    IN einddatum date,
+-- DROP FUNCTION marketing._crm_giftencat(text);
+
+CREATE OR REPLACE FUNCTION marketing._crm_giftencat(
+    IN periode text,
     OUT partner_id integer,
     OUT datum date,
     OUT giftcatverwerkt text,
@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION public._crm_giftencat(
     OUT giftcatdonateur text,
     OUT giftcatbedrag integer,
     OUT bedrag numeric,
+	OUT description text,
     OUT voornaam character varying,
     OUT achternaam character varying,
     OUT straat character varying,
@@ -24,6 +25,7 @@ CREATE OR REPLACE FUNCTION public._crm_giftencat(
     OUT email_ontvangen text,
     OUT post_ontvangen text,
     OUT email character varying,
+	OUT telefoonnr character varying,
     OUT dimensie1 character varying,
     OUT dimensie2 character varying,
     OUT dimensie3 character varying,
@@ -47,11 +49,11 @@ BEGIN
 			WHEN aa.code = '499010' THEN 'niet verwerkt'
 		END giftcatverwerkt,
 		CASE 
-			WHEN (SELECT aantalgiften FROM _crm_giftenperid(p.id)) <= 1 THEN 1
+			WHEN (SELECT aantalgiften FROM _crm_giftenperid(p.id)) = 1 THEN 1
 			ELSE 2
 		END giftcataantal,
 		CASE	--SELECT * FROM res_partner_corporation_type
-			WHEN COALESCE(p.organisation_type_id,0) <> 0 THEN 'Natuurpunt Intern'
+			WHEN p.organisation_type_id IN (1,3,5,7,8,16) THEN 'Intern'
 			WHEN p.corporation_type_id BETWEEN 1 AND 12 THEN 'Vennootschap'
 			WHEN p.corporation_type_id = 13 THEN 'Publiekrechterlijk'
 			WHEN p.corporation_type_id IN (15,16) THEN 'Stichting'
@@ -63,7 +65,8 @@ BEGIN
 			WHEN (aml.credit - aml.debit) BETWEEN 250 AND 1000 THEN 2
 			WHEN (aml.credit - aml.debit) > 1000 THEN 3
 		END giftcatbedrag,
-		(aml.credit - aml.debit) bedrag,		
+		(aml.credit - aml.debit) bedrag,	
+		REPLACE(REPLACE(REPLACE(aml.name,';',','),chr(10),' '),chr(13), ' ') as description,
 		p.first_name as voornaam,
 		p.last_name as achternaam,
 		CASE
@@ -88,6 +91,7 @@ BEGIN
 		CASE WHEN COALESCE(p.opt_out,'f') = 'f' THEN 'JA' WHEN p.opt_out = 't' THEN 'NEEN' ELSE 'JA' END email_ontvangen,
 		CASE WHEN COALESCE(p.opt_out_letter,'f') = 'f' THEN 'JA' WHEN p.opt_out_letter = 't' THEN 'NEEN' ELSE 'JA' END post_ontvangen,
 		p.email,
+		COALESCE(p.mobile,p.phone) telefoonnr,
 		--aaa.code,
 		COALESCE(aaa1.name,'') dimensie1,
 		COALESCE(aaa2.name,'') dimensie2,
@@ -122,7 +126,7 @@ BEGIN
 		--link naar partner		
 		LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id
 	WHERE aa.code IN ('732000','732100','499010')
-		AND aml.date BETWEEN startdatum AND einddatum
+		AND aml.date BETWEEN _crm_startdatum(periode) AND _crm_einddatum(periode)
 		--AND (p.active = 't' OR (p.active = 'f' AND COALESCE(p.deceased,'f') = 't'))	--van de inactieven enkele de overleden contacten meenemen
 		--AND p.id = v.testID
 	UNION
@@ -133,11 +137,11 @@ BEGIN
 			WHEN aa.code = '499010' THEN 'niet verwerkt'
 		END giftcatverwerkt,
 		CASE 
-			WHEN (SELECT aantalgiften FROM _crm_giftenperid(p.id)) <= 1 THEN 1
+			WHEN (SELECT aantalgiften FROM _crm_giftenperid(p.id)) = 1 THEN 1
 			ELSE 2
 		END giftcataantal,
 		CASE	--SELECT * FROM res_partner_corporation_type
-			WHEN COALESCE(p.organisation_type_id,0) <> 0 THEN 'Natuurpunt Intern'
+			WHEN p.organisation_type_id IN (1,3,5,7,8,16) THEN 'Intern'
 			WHEN p.corporation_type_id BETWEEN 1 AND 12 THEN 'Vennootschap'
 			WHEN p.corporation_type_id = 13 THEN 'Publiekrechterlijk'
 			WHEN p.corporation_type_id IN (15,16) THEN 'Stichting'
@@ -150,6 +154,7 @@ BEGIN
 			WHEN bsl.amount > 1000 THEN 3
 		END giftcatbedrag,
 		bsl.amount bedrag,
+		REPLACE(REPLACE(REPLACE(bsl.name,';',','),chr(10),' '),chr(13), ' ') as description,
 		p.first_name as voornaam,
 		p.last_name as achternaam,
 		CASE
@@ -174,6 +179,7 @@ BEGIN
 		CASE WHEN COALESCE(p.opt_out,'f') = 'f' THEN 'JA' WHEN p.opt_out = 't' THEN 'NEEN' ELSE 'JA' END email_ontvangen,
 		CASE WHEN COALESCE(p.opt_out_letter,'f') = 'f' THEN 'JA' WHEN p.opt_out_letter = 't' THEN 'NEEN' ELSE 'JA' END post_ontvangen,
 		p.email,
+		COALESCE(p.mobile,p.phone) telefoonnr,
 		COALESCE(aaa1.name,'') dimensie1,
 		COALESCE(aaa2.name,'') dimensie2,
 		COALESCE(aaa3.name,'') dimensie3,
@@ -203,7 +209,7 @@ BEGIN
 		AND bs.state = 'draft'
 		AND aa.code IN ('732000','732100','499010')
 		AND NOT(aa.id IN (4211,4209,2415,2691,2537,4210,2098,2145,2365,2690,2162,2217,2722,2173,2571))
-		AND bsl.date BETWEEN startdatum AND einddatum
+		AND bsl.date BETWEEN _crm_startdatum(periode) AND _crm_einddatum(periode)
 		;
  
 END; 
@@ -211,8 +217,6 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
   ROWS 1000;
-ALTER FUNCTION public._crm_giftencat(date, date)
+ALTER FUNCTION marketing._crm_giftencat(text)
   OWNER TO axelvandencamp;
-GRANT EXECUTE ON FUNCTION public._crm_giftencat(date, date) TO public;
-GRANT EXECUTE ON FUNCTION public._crm_giftencat(date, date) TO axelvandencamp;
-GRANT EXECUTE ON FUNCTION public._crm_giftencat(date, date) TO readonly;
+
