@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2021-01-01'::date AS startdatum,
-	'2022-12-31'::date AS einddatum,
+	'2019-01-01'::date AS startdatum,
+	'2021-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -312,33 +312,7 @@ WHERE partner_id = 153725 ORDER BY date
 --WHERE bron = 'npca';
 --WHERE date IN ('2015-11-25','2015-07-14','2015-07-17','2015-07-18') AND bron = 'ERP-DOMI' --uitgestelde giften 2014 geïnd in 2015
 */
------------------------------------------------
--- GIFTEN per JAAR
------------------------------------------------
-/*
-DROP TABLE IF EXISTS tempGIFTEN_per_JAAR;
-CREATE TEMP TABLE tempGIFTEN_per_JAAR (
-	partner_id numeric,
-	"2016" numeric,
-	"2017" numeric,
-	"2018" numeric);
-INSERT INTO tempGIFTEN_per_JAAR
-	(SELECT DISTINCT partner_id,
-		CASE
-			WHEN jaar = 2016 THEN amount ELSE 0
-		END "2016"
-	FROM tempGIFTEN);
-UPDATE tempGIFTEN_per_JAAR GJ
-SET "2016" = G.amount FROM tempGIFTEN G WHERE G.partner_id = GJ.partner_id AND G.jaar = 2016;
-UPDATE tempGIFTEN_per_JAAR GJ
-SET "2017" = G.amount FROM tempGIFTEN G WHERE G.partner_id = GJ.partner_id AND G.jaar = 2017;
-UPDATE tempGIFTEN_per_JAAR GJ
-SET "2018" = G.amount FROM tempGIFTEN G WHERE G.partner_id = GJ.partner_id AND G.jaar = 2018;
-	
-SELECT *
-FROM tempGIFTEN_per_JAAR
-ORDER BY partner_id	
-*/
+
 ---------------------------------------------------------------
 --statistieken
 ------------------------
@@ -396,18 +370,6 @@ WHERE 	grootboekrek = '732000'
 --LIMIT 10
 
 
---fiscale attesten: toevoeging "geboorte datum" en "naam partner"
-SELECT *
---SELECT SUM(amount)
-FROM
-	(SELECT SUM(amount) amount, partner_id, geboorte_datum, naam_partner
-	FROM tempGIFTEN
-	WHERE 	grootboekrek = '732000'
-		AND NOT(description LIKE 'GIFT/2014/%')
-	GROUP BY partner_id, geboorte_datum, naam_partner) x
-WHERE amount >= 40
-
-
 --fiscale attesten
 --lijst donateurs (juiste velden)
 SELECT *
@@ -425,7 +387,7 @@ WHERE amount >= 40
 --lijst unieke donateurs
 ------------------------
 /*
-SELECT DISTINCT partner_id, sum(amount) bedrag, min(date) min_date, max(date) max_date, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status
+SELECT DISTINCT partner_id, sum(amount) bedrag, jaar, min(date) min_date, max(date) max_date, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status
 --SELECT *
 FROM tempGIFTEN 
 --WHERE postcode IN ('3070','3071','3078','1910','3020','1820','1800','1830','1831','1930','1932','1933','3000','3001','3010','3012','3018','3060','3061','3040','3150','3090','3091','3080','1000','1020','1050','1120','1130')
@@ -433,14 +395,26 @@ FROM tempGIFTEN
 WHERE project_code LIKE '%6617%' --AND naam LIKE 'Natuurpunt%'
 --WHERE LOWER(description) LIKE 'mangopay sa np exp%' OR LOWER(description) LIKE 'mangopay sanp exp%' OR LOWER(description) LIKE '%expeditie%'
 --WHERE grootboekrek = '732000'
-GROUP BY partner_id,  description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
-ORDER BY partner_id --WHERE partner_id IN ('94626','19544')
+GROUP BY partner_id,  jaar, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
+ORDER BY partner_id, jaar --WHERE partner_id IN ('94626','19544')
 --voor post overleden, post ontvangen en adres status uitfilteren
 --SELECT DISTINCT partner_id FROM tempGIFTEN
 
 SELECT partner_id, SUM(amount) bedrag
 FROM tempGIFTEN
 GROUP BY partner_id
+
+-- met link naar [marketing].[_av_temp_websitegebruikers]
+SELECT DISTINCT g.partner_id, sum(g.amount) bedrag, g.jaar, min(g.date) min_date, max(g.date) max_date, g.aanspreking, g.geslacht, g.naam, g.voornaam, g.achternaam, g.straat, g.huisnummer, g.bus, postcode, g.gemeente, g.provincie, g.land, g.email, 
+	CASE WHEN COALESCE(w.partner_id,0) = 0 THEN 'neen' ELSE 'ja' END website_gebruiker,
+	CASE WHEN COALESCE(s.emailaddress,'_') = '_' THEN 'neen' ELSE 'ja' END suppressed,
+	g.afdeling, g.overleden, g.adres_status, g.post_ontvangen, g.email_ontvangen, g.nooit_contacteren, g.lidnummer, g.huidige_lidmaatschap_status
+FROM tempGIFTEN g
+	LEFT OUTER JOIN marketing._av_temp_websitegebruikers w ON w.partner_id = g.partner_id
+	LEFT OUTER JOIN marketing._av_temp_suppressionlist s ON LOWER(s.emailaddress) = LOWER(g.email) 
+GROUP BY g.partner_id, w.partner_id, g.jaar, g.aanspreking, g.geslacht, g.naam, g.voornaam, g.achternaam, g.straat, g.huisnummer, g.bus, postcode, g.gemeente, g.provincie, g.land, g.email,
+	s.emailaddress, g.afdeling, g.overleden, g.adres_status, g.post_ontvangen, g.email_ontvangen, g.nooit_contacteren, g.lidnummer, g.huidige_lidmaatschap_status
+ORDER BY g.partner_id, g.jaar
 */
 ----------------------------------------------------------------
 --lijst donateurs zonder lidmaatschap
@@ -492,49 +466,6 @@ ORDER BY partner_id, voornaam, achternaam, project_code
 */
 
 /*
-SELECT * FROM tempGIFTEN WHERE partner_id = 95932
---GIFTEN DONATEURS: Roularta
---na het lopen van "GIFTEN basis.sql"
-SELECT partner_id, aanspreking, voornaam, naam, opzegdatum, straat, huisnummer, bus, postcode, gemeente, provincie, email, geslacht, sum(amount) bedrag
-FROM myvar v, tempGIFTEN g
-WHERE huidige_lidmaatschap_status = 'paid' AND COALESCE(opzegdatum,'2999-12-31') > now()::date AND amount > 19 
-GROUP BY partner_id, voornaam, naam, opzegdatum, straat, huisnummer, bus, postcode, gemeente, provincie, email, geslacht, aanspreking
-LIMIT 12500
-
-SELECT partner_id, max(date) datum_laatste_gift FROM tempGIFTEN GROUP BY partner_id
-
-
-SELECT DISTINCT project_code FROM tempGIFTEN WHERE project_code LIKE '%3333%'
-
-SELECT * FROM account_analytic_account LIMIT 100
-SELECT * FROM myvar v, account_analytic_line --LIMIT 100
-	WHERE date > v.startdatum AND amount = 12000
-SELECT DISTINCT aal.company_id, c.name FROM account_analytic_line aal JOIN res_company c ON aal.company_id = c.id
-SELECT * FROM account_move_line WHERE LOWER(name) LIKE '%gift%' LIMIT 100
-
-SELECT DISTINCT aa.code, aal.general_account_id FROM account_account aa JOIN account_analytic_line aal ON aal.general_account_id = aa.id WHERE aa.code IN ('732000','732100')
-SELECT * FROM account_analytic_line aal WHERE aal.date < '01-01-2012'
-					WHERE aal.general_account_id IN (4036,2513,1836,3917,3285,4039)
-
-----------------------------------------------------------------------------
--- voor giften voor 2014 moeten giften uit "npca betalingen" worden gehaald
--- subquery voor npca-betalingen
-----------------------------------------------------------------------------
-SELECT pph.*
-FROM myvar v, res_partner_payment_history pph 
-WHERE pph.project_nbr > '0' 
-	--AND pph.project_nbr IN ('3333','3333A','3333B','3333C','3333D')
-	AND pph.date BETWEEN v.startdatum AND v.einddatum AND partner_id = v.testid
-LIMIT 100
-
-SELECT * FROM res_partner_payment_history WHERE partner_id = 127412 LIMIT 100
-
-	JOIN (SELECT date, amount, partner_id, project_nbr, 't' AS npca_betaling 
-		FROM myvar v, res_partner_payment_history 
-		WHERE project_nbr > '0' 
-		--AND project_nbr IN ('3333','3333A','3333B','3333C','3333D')
-		AND date BETWEEN v.startdatum AND '01-01-2014') pph ON pph.partner_id = p.id
-
 --------------------------------------------------------------------------------
 -- testen op Giften bron "ERP"
 --------------------------------
@@ -580,12 +511,4 @@ SELECT * FROM account_move WHERE id = 112192
 SELECT * FROM account_analytic_line WHERE move_id IN (362464)
 SELECT * FROM account_analytic_line WHERE account_id IN (2901,3833) AND move_id = 112192
 SELECT * FROM account_account WHERE id = 3010
-
-
-
-SELECT partner_id, jaar, SUM(amount) bedrag
---SELECT *
-FROM tempGIFTEN
-WHERE jaar = 2015
-GROUP BY partner_id, jaar
 */
