@@ -1,6 +1,6 @@
 -- Function: public._crm_giften(date, date)
 
--- DROP FUNCTION public._crm_giften(date, date);
+-- DROP FUNCTION marketing._crm_giften(integer, date, date);
 
 CREATE OR REPLACE FUNCTION marketing._crm_giften(
     IN prm_partner_id integer,
@@ -8,12 +8,12 @@ CREATE OR REPLACE FUNCTION marketing._crm_giften(
     IN einddatum date,
     OUT account_id integer,
     OUT date date,
-    OUT jaar numeric,
-    OUT maand numeric,
-    OUT week numeric,
+    OUT jaar double precision,
+    OUT maand double precision,
+    OUT week double precision,
     OUT debet numeric,
     OUT credit numeric,
-    OUT amount numeric,
+    OUT amount double precision,
     OUT partner_id integer,
     OUT huidige_lidmaatschap_status character varying,
     OUT lidnummer character varying,
@@ -37,7 +37,8 @@ CREATE OR REPLACE FUNCTION marketing._crm_giften(
     OUT adres_status integer,
     OUT email_ontvangen text,
     OUT post_ontvangen text,
-    OUT overleden boolean,
+	OUT nooit_contacteren boolean,
+	OUT overleden boolean,
     OUT email character varying,
     OUT aanspreking character varying,
     OUT geslacht character varying,
@@ -52,13 +53,14 @@ CREATE OR REPLACE FUNCTION marketing._crm_giften(
     OUT project_code character varying,
     OUT project character varying,
     OUT grootboekrek character varying,
-    OUT fiscaal_attest boolean,
     OUT grootboekrek_naam text,
+	OUT fiscaal_attest boolean,
     OUT boeking character varying,
     OUT boeking_type text,
     OUT rechtspersoon integer,
     OUT particuliere_gift integer,
-    OUT vzw character varying)
+    OUT vzw character varying,
+	OUT bron text)
   RETURNS SETOF record AS
 $BODY$
 BEGIN
@@ -117,6 +119,7 @@ BEGIN
 		COALESCE(p.address_state_id,0) adres_status,
 		CASE WHEN COALESCE(p.opt_out,'f') = 'f' THEN 'JA' WHEN p.opt_out = 't' THEN 'NEEN' ELSE 'JA' END email_ontvangen,
 		CASE WHEN COALESCE(p.opt_out_letter,'f') = 'f' THEN 'JA' WHEN p.opt_out_letter = 't' THEN 'NEEN' ELSE 'JA' END post_ontvangen,
+		p.iets_te_verbergen,
 		COALESCE(p.deceased,'f') overleden,
 		p.email,
 		CASE
@@ -137,10 +140,10 @@ BEGIN
 		COALESCE(COALESCE(aaa3.code,aaa2.code),aaa1.code) AS project_code,
 		COALESCE(COALESCE(aaa3.name,aaa2.name),aaa1.name) AS project,
 		aa.code grootboekrek,
+		REPLACE(aa.name,';',',') grootboekrek_naam,
 		CASE
 			WHEN aa.code = '732000' THEN true ELSE false
 		END fiscaal_attest,
-		REPLACE(aa.name,';',',') grootboekrek_naam,
 		am.name boeking,
 		CASE
 			WHEN COALESCE(LOWER(am.name),'') LIKE '%div%' THEN 'correctie' ELSE 'normaal (geen correctie)'
@@ -150,7 +153,8 @@ BEGIN
 			WHEN COALESCE(p.organisation_type_id,0) > 0 THEN 1 
 			WHEN COALESCE(p.corporation_type_id,0) > 0 THEN 1 ELSE 0
 		END particuliere_gift,
-		rc.name AS vzw
+		rc.name AS vzw,
+		'erp' AS bron
 	FROM account_move am
 		INNER JOIN account_move_line aml ON aml.move_id = am.id
 		INNER JOIN account_account aa ON aa.id = aml.account_id
@@ -172,10 +176,114 @@ BEGIN
 	WHERE (aa.code = '732100' OR  aa.code = '732000')
 		AND aml.date BETWEEN startdatum AND einddatum
 		AND (CASE 
-			 	WHEN COALESCE(prm_partner_id,0) > 0 THEN p.id = prm_partner_id ELSE p.id > 0END)
+			 	WHEN COALESCE(prm_partner_id,0) > 0 THEN p.id = prm_partner_id ELSE p.id > 0 END)
 		--AND (p.active = 't' OR (p.active = 'f' AND COALESCE(p.deceased,'f') = 't'))	--van de inactieven enkele de overleden contacten meenemen
 		--AND p.id = v.testID
-		;
+		
+	UNION ALL
+	
+	SELECT 
+		null AS account_id,
+		pph.date,
+		EXTRACT(year FROM pph.date) jaar,
+		EXTRACT(month FROM pph.date) maand,
+		EXTRACT(week FROM pph.date) week,
+		NULL debet,
+		NULL credit,
+		pph.amount,
+		p.id p_id,
+		p.membership_state_b huidige_lidmaatschap_status,
+		p.membership_nbr lidnummer,
+		'[' || p.id::text || '] ' || p.name as partner,
+		p.name as naam,
+		p.first_name as voornaam,
+		p.last_name as achternaam,
+		COALESCE(COALESCE(a2.name,a.name),'onbekend') afdeling,
+		COALESCE(a2.id,a.id) afdeling_id,
+		p.membership_cancel_b as opzegdatum,
+		CASE
+			WHEN c.id = 21 AND p.crab_used = 'true' THEN ccs.name
+			ELSE p.street
+		END straat,
+		CASE
+			WHEN c.id = 21 AND p.crab_used = 'true' THEN p.street_nbr ELSE ''
+		END huisnummer, 
+		p.street_bus bus,
+		CASE
+			WHEN c.id = 21 AND p.crab_used = 'true' THEN cc.zip
+			ELSE p.zip
+		END postcode,
+		CASE 
+			WHEN c.id = 21 THEN cc.name ELSE p.city 
+		END gemeente,
+		p.postbus_nbr postbus,
+		CASE
+			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 1000 AND 1299 THEN 'Brussel' 
+			WHEN p.country_id = 21 AND (substring(p.zip from '[0-9]+')::numeric BETWEEN 1500 AND 1999 OR substring(p.zip from '[0-9]+')::numeric BETWEEN 3000 AND 3499) THEN 'Vlaams Brabant'
+			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 2000 AND 2999  THEN 'Antwerpen' 
+			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 3500 AND 3999  THEN 'Limburg' 
+			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 8000 AND 8999  THEN 'West-Vlaanderen' 
+			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 9000 AND 9999  THEN 'Oost-Vlaanderen' 
+			WHEN p.country_id = 21 THEN 'Wallonië'
+			WHEN p.country_id = 166 THEN 'Nederland'
+			WHEN NOT(p.country_id IN (21,166)) THEN 'Buitenland niet NL'
+			ELSE 'andere'
+		END AS provincie,
+		c.name land,
+		p.birthday,
+		a5.name,
+		COALESCE(p.address_state_id,0) adres_status,
+		CASE WHEN COALESCE(p.opt_out,'f') = 'f' THEN 'JA' WHEN p.opt_out = 't' THEN 'NEEN' ELSE 'JA' END email_ontvangen,
+		CASE WHEN COALESCE(p.opt_out_letter,'f') = 'f' THEN 'JA' WHEN p.opt_out_letter = 't' THEN 'NEEN' ELSE 'JA' END post_ontvangen,
+		p.iets_te_verbergen,
+		COALESCE(p.deceased,'f') overleden,
+		p.email,
+		CASE
+			WHEN p.gender = 'M' THEN 'Dhr.'
+			WHEN p.gender = 'V' THEN 'Mevr.'
+			ELSE pt.shortcut
+		END aanspreking,
+		p.gender AS geslacht,
+		REPLACE(REPLACE(REPLACE(pph.description,';',','),chr(10),' '),chr(13), ' ') AS description,
+		NULL AS ref,
+		--pph.project_nbr,
+		pph.project_nbr dimensie1,
+		pph.cost_center dimensie2,
+		NULL AS dimensie3,
+		NULL AS code1,
+		NULL AS code2,
+		NULL AS code3,
+		--COALESCE(pph.cost_center,pph.project_nbr) AS project_code,
+		CASE WHEN pph.cost_center = '' THEN pph.project_nbr ELSE COALESCE(pph.cost_center,pph.project_nbr) END AS project_code,
+		NULL AS project,
+		NULL AS grootboekrek,
+		NULL AS grootboekrek_naam,
+		NULL AS fiscaal_attest,
+		NULL AS boeking,
+		NULL AS boeking_type,
+		p.corporation_type_id AS rechtspersoon,
+		NULL AS particuliere_gift,
+		NULL AS vzw,
+		'npca' AS bron
+	FROM res_partner p
+		JOIN res_partner_payment_history pph ON pph.partner_id = p.id
+		LEFT OUTER JOIN res_partner_title pt ON p.title = pt.id
+		JOIN res_country c ON p.country_id = c.id
+		LEFT OUTER JOIN res_country_city_street ccs ON p.street_id = ccs.id
+		LEFT OUTER JOIN res_country_city cc ON p.zip_id = cc.id
+		--afdeling vs afdeling eigen keuze
+		LEFT OUTER JOIN res_partner a ON p.department_id = a.id
+		LEFT OUTER JOIN res_partner a2 ON p.department_choice_id = a2.id
+		--link naar partner		
+		LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id
+	 --link naar rechtspersoon
+	 	LEFT OUTER JOIN res_partner_corporation_type pct ON pct.id = p.corporation_type_id
+	WHERE pph.project_nbr > '0' 
+		AND pph.date BETWEEN startdatum AND einddatum
+		AND (CASE 
+			 	WHEN COALESCE(prm_partner_id,0) > 0 THEN p.id = prm_partner_id ELSE p.id > 0 END)
+	--ORDER BY pph.date
+;
 
 	 
 END; 
@@ -190,7 +298,7 @@ GRANT EXECUTE ON FUNCTION marketing._crm_giften(integer, date, date) TO axelvand
 GRANT EXECUTE ON FUNCTION marketing._crm_giften(integer, date, date) TO readonly;
 
 
---SELECT * FROM marketing._crm_giften(NULL,'2022-03-06','2022-03-07')
+-- SELECT * FROM marketing._crm_giften(NULL,'2009-01-01','2009-12-31')
 
 
 
