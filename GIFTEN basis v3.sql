@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2019-01-01'::date AS startdatum,
-	'2021-12-31'::date AS einddatum,
+	'2021-01-01'::date AS startdatum,
+	'2022-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -285,6 +285,43 @@ INSERT INTO tempGIFTEN
 		--AND p.opt_out_letter = 'f' --brieven uitschrijven niet
 		--AND p.id = v.testID
 	ORDER BY pph.date); 
+UPDATE tempGIFTEN SET voornaam = '' WHERE voornaam IS NULL;
+UPDATE tempGIFTEN SET achternaam = '' WHERE achternaam IS NULL;
+UPDATE tempGIFTEN SET bus = '' WHERE bus IS NULL;	
+UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;	
+UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
+UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;	
+
+-- totaal
+SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE '%3663%' -- totaal aantal giften + totaal bedrag
+-- via post	
+SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam, achternaam, 
+	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
+	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
+FROM tempGIFTEN 
+WHERE project_code LIKE '%3663%' 
+	AND NOT(COALESCE(email,'__') LIKE '%@%') -- geen email adres
+	AND overleden = 'false' 
+	AND adres_status::numeric <> 2 -- niet 'adres verkeerd'
+	AND post_ontvangen = 'JA' 
+GROUP BY partner_id,  amount, description, project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
+ORDER BY partner_id	
+-- via mail
+SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam, achternaam, 
+	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
+	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
+FROM tempGIFTEN 
+WHERE project_code LIKE '%3663%' 
+	AND COALESCE(email,'__') LIKE '%@%' -- wel email adres
+	AND overleden = 'false' 
+	AND email_ontvangen = 'JA' 
+GROUP BY partner_id,  amount, description, project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
+ORDER BY partner_id		
+	
+	
+	
+	
+	
 /*
 SELECT * FROM tempGIFTEN
 SELECT SUM(amount), project FROM tempGIFTEN GROUP BY project
