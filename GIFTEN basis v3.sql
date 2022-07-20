@@ -292,14 +292,17 @@ UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;
 UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
 UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;	
 
+/*----------------------------------------------
+-- queries verzendlijsten bedankingsmails giften
+------------------------------------------------
 -- totaal
-SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE '%3663%' -- totaal aantal giften + totaal bedrag
+SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE '%3941%' -- totaal aantal giften + totaal bedrag
 -- via post	
 SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam, achternaam, 
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
 	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE '%3663%' 
+WHERE project_code LIKE '%3941%' 
 	AND NOT(COALESCE(email,'__') LIKE '%@%') -- geen email adres
 	AND overleden = 'false' 
 	AND adres_status::numeric <> 2 -- niet 'adres verkeerd'
@@ -311,16 +314,13 @@ SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
 	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE '%3663%' 
+WHERE project_code LIKE '%3941%' 
 	AND COALESCE(email,'__') LIKE '%@%' -- wel email adres
 	AND overleden = 'false' 
 	AND email_ontvangen = 'JA' 
 GROUP BY partner_id,  amount, description, project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
-ORDER BY partner_id		
-	
-	
-	
-	
+ORDER BY partner_id	
+*/	
 	
 /*
 SELECT * FROM tempGIFTEN
@@ -453,90 +453,8 @@ GROUP BY g.partner_id, w.partner_id, g.jaar, g.aanspreking, g.geslacht, g.naam, 
 	s.emailaddress, g.afdeling, g.overleden, g.adres_status, g.post_ontvangen, g.email_ontvangen, g.nooit_contacteren, g.lidnummer, g.huidige_lidmaatschap_status
 ORDER BY g.partner_id, g.jaar
 */
-----------------------------------------------------------------
---lijst donateurs zonder lidmaatschap
--------------------------------------
-/*
-SELECT DISTINCT MIN(date) date, huidige_lidmaatschap_status, partner_id, lidnummer, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, email_ontvangen, post_ontvangen, overleden
-FROM myvar v, tempGIFTEN 
---WHERE NOT(COALESCE(huidige_lidmaatschap_status,'_') IN ('paid','free'))
-WHERE COALESCE(lidnummer,'_') = '_' --OR NOT(COALESCE(huidige_lidmaatschap_status,'_') IN ('_','paid','free','invoiced','wait_member','canceled')))
-	--AND date BETWEEN v.startdatum AND v.einddatum
-	AND adres_status <> '2' AND post_ontvangen = 'JA' AND overleden = 'false'
-GROUP BY partner_id, lidnummer, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, overleden, email_ontvangen, post_ontvangen, huidige_lidmaatschap_status
-ORDER BY date DESC
-*/
-/*
----------------------------------------------------------------
---donateurs "bos voor iedereen"
--- - (projectnummers 3333 - 3333A - 3333B - 3333C - 3333D)
--- - 1.	wonende in de provincie Antwerpen, Vlaams-Brabant en Oost-Vlaanderen
--- - 2.	van 1/1/2012 tot heden
----------------------------------------------------------------
-SELECT date, partner_id, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, amount, afdeling-- provincie, afdeling, overleden, adres_status, email_ontvangen, post_ontvangen
-FROM myvar v, tempGIFTEN g	
-WHERE project_code LIKE '%9903'
-	--AND g.date >= v.startdatumbosvooriedereen
-	AND adres_status <> '2' AND post_ontvangen = 'JA' AND overleden = 'false'
-GROUP BY date, partner_id, voornaam, achternaam, naam, opzegdatum, straat, huisnummer, bus, postcode, gemeente, amount, afdeling--, provincie, land, email, geslacht, aanspreking, project, afdeling
----------------------------------------------------------------
---Alle donateurs (inclusief Bos voor Iedereen)
--- - 1.	alle provincies
--- - 2.	van 1/1/2013 tot heden
----------------------------------------------------------------
-SELECT partner_id, aanspreking, voornaam, naam, opzegdatum, straat, huisnummer, bus, postcode, gemeente, provincie, email, geslacht, sum(amount) bedrag
-FROM myvar v, tempGIFTEN g
-WHERE g.date >= v.startdatumalledonateurs 
-	--AND partner_id = 173664
-GROUP BY partner_id, voornaam, naam, opzegdatum, straat, huisnummer, bus, postcode, gemeente, provincie, email, geslacht, aanspreking
----------------------------------------------------------------
---Alle donateurs voor specifiek project
----------------------------------------------------------------
-SELECT partner_id, lidnummer, date datum, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, land, opzegdatum, geslacht, aanspreking, email, amount bedrag, project, project_code,
-SELECT partner_id, date datum, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, land, email, project, project_code,
-	post_ontvangen, email_ontvangen, overleden, adres_status, huidige_lidmaatschap_status
-FROM myvar v, tempGIFTEN g	
-WHERE project_code = 'BRA-3915-9401'
---WHERE project_code IN ('4002','4003')
---WHERE provincie = 'Limburg' AND date >= '2016-01-01'
-ORDER BY partner_id, voornaam, achternaam, project_code
-*/
-
-/*
---------------------------------------------------------------------------------
--- testen op Giften bron "ERP"
 --------------------------------
-SELECT *
-FROM myvar v, account_analytic_line aal
-	INNER JOIN account_analytic_account aaa ON  aal.account_id =  aaa.id AND dimension_sequence = 1 --om dubbele lijnen te vermijden; moet uitgebreid worden zodat ook andere dimensies zichtbaar worden
-	INNER JOIN account_account aa ON  aal.general_account_id =  aa.id 
-	--INNER JOIN (SELECT * FROM account_move_line WHERE COALESCE(statement_line_id ,0) <> 0) aml ON aal.move_id = aml.id
-	INNER JOIN account_move_line aml ON  aal.move_id =  aml.id --AND aal.ref = aml.ref
-	INNER JOIN res_partner p ON  aml.partner_id =  p.id
-	--JOIN res_company rc ON aal.company_id = rc.id 
-	--JOIN res_country c ON p.country_id = c.id
-	--LEFT OUTER JOIN res_country_city_street ccs ON p.street_id = ccs.id
-	--LEFT OUTER JOIN res_country_city cc ON p.zip_id = cc.id
-	--LEFT OUTER JOIN res_partner_title pt ON p.title = pt.id
-	--LEFT OUTER JOIN account_invoice_line il ON il.account_id = aa.id
-
-	--LEFT OUTER JOIN account_analytic_account aaa1 ON aml.analytic_dimension_1_id = aaa1.id
-	--LEFT OUTER JOIN account_analytic_account aaa2 ON aml.analytic_dimension_2_id = aaa2.id
-	--LEFT OUTER JOIN account_analytic_account aaa3 ON aml.analytic_dimension_3_id = aaa3.id
-	
-WHERE (aa.code = '732100' OR  aa.code = '732000')
-	AND aal.date BETWEEN v.startdatum AND v.einddatum
-	--AND p.active = 't' -- niet actieven ook meenemen; kunnen mogelijk wel giften hebben gedaan
-	--AND p.deceased = 'f' -- overledenen niet
-	--AND COALESCE(p.membership_state_b,'--') IN ('wait_member','invoiced','paid','none','--','')
-	--AND aaa.code IN ('F-03333','F-03333A','F-03333B','F-03333C','F-03333D') --bos voor iedereen
-	--AND p.address_state_id IN (1,3,4) --"adres verkeerd" niet
-	--AND p.opt_out = 'f' --email uitschrijven niet
-	--AND p.opt_out_letter = 'f' --brieven uitschrijven niet
-	AND p.id = 19544
-ORDER BY aal.date;
---------------------------------
---------------------------------
+/*
 SELECT * FROM account_move_reconcile WHERE name = 'B-15-185995'	
 SELECT * FROM account_move_line WHERE reconcile_id = 266907
 SELECT * FROM account_invoice WHERE move_id = 112192	
