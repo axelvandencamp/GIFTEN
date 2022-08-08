@@ -11,7 +11,7 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2021-01-01'::date AS startdatum,
+	'2022-07-13'::date AS startdatum,
 	'2022-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
@@ -290,8 +290,12 @@ UPDATE tempGIFTEN SET achternaam = '' WHERE achternaam IS NULL;
 UPDATE tempGIFTEN SET bus = '' WHERE bus IS NULL;	
 UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;	
 UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
-UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;	
-
+UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
+/*
+SELECT *
+FROM tempGIFTEN g
+	JOIN marketing._m_dwh_waarnemingenbe_nieuwsbrief wn ON wn.partner_id = g.partner_id
+*/
 /*----------------------------------------------
 -- queries verzendlijsten bedankingsmails giften
 ------------------------------------------------
