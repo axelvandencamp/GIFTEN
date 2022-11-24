@@ -295,6 +295,7 @@ UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
 SELECT *
 FROM tempGIFTEN g
 	JOIN marketing._m_dwh_waarnemingenbe_nieuwsbrief wn ON wn.partner_id = g.partner_id
+	JOIN marketing._m_dwh_donateursprofiel dp ON dp.parnter_id = g.pa
 */
 /*----------------------------------------------
 -- queries verzendlijsten bedankingsmails giften
@@ -441,8 +442,10 @@ ORDER BY partner_id, jaar --WHERE partner_id IN ('94626','19544')
 --voor post overleden, post ontvangen en adres status uitfilteren
 --SELECT DISTINCT partner_id FROM tempGIFTEN
 
-SELECT partner_id, SUM(amount) bedrag
+SELECT /*partner_id,*/ SUM(amount) bedrag, project
 FROM tempGIFTEN
+WHERE project_code LIKE '%03333%' AND date >= '2022-10-14'
+GROUP BY project
 GROUP BY partner_id
 
 -- met link naar [marketing].[_av_temp_websitegebruikers]
