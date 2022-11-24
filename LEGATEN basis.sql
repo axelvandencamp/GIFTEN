@@ -173,7 +173,7 @@ INSERT INTO tempLEGATEN
 		LEFT OUTER JOIN res_partner a5 ON p.relation_partner_id = a5.id
 	 	--link naar rechtspersoon
 	 	LEFT OUTER JOIN res_partner_corporation_type pct ON pct.id = p.corporation_type_id
-	WHERE (aa.code = '734000')
+	WHERE COALESCE(COALESCE(aaa3.code,aaa2.code),aaa1.code) LIKE 'L-%' -- (aa.code = '734000')
 		AND aml.date BETWEEN v.startdatum AND v.einddatum
 		AND (p.active = 't' OR (p.active = 'f' AND COALESCE(p.deceased,'f') = 't'))	--van de inactieven enkele de overleden contacten meenemen
 		--AND p.id = v.testID
@@ -288,7 +288,7 @@ INSERT INTO tempGIFTEN
 	ORDER BY pph.date); 
 */
 
-SELECT l.date,	l.amount, l.partner_id,	l.huidige_lidmaatschap_status,	l.lidnummer, l.partner, --l.naam,	l.voornaam,
+SELECT l.date,	l.jaar, l.amount, l.partner_id,	l.huidige_lidmaatschap_status,	l.lidnummer, l.partner, --l.naam,	l.voornaam,
 	l.description, l.ref, l.dimensie1, l.dimensie2,	l.dimensie3, l.project_code, l.project,	l.grootboekrek,
 	l.grootboekrek_naam, l.vzw, l.boeking
 FROM tempLEGATEN l
