@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2022-07-13'::date AS startdatum,
-	'2022-12-31'::date AS einddatum,
+	'2023-01-01'::date AS startdatum,
+	'2023-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
