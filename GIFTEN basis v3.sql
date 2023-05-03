@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2023-01-01'::date AS startdatum,
-	'2023-12-31'::date AS einddatum,
+	'2022-07-01'::date AS startdatum,
+	'2023-04-14'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -297,35 +297,39 @@ FROM tempGIFTEN g
 	JOIN marketing._m_dwh_waarnemingenbe_nieuwsbrief wn ON wn.partner_id = g.partner_id
 	JOIN marketing._m_dwh_donateursprofiel dp ON dp.parnter_id = g.pa
 */
-/*----------------------------------------------
+--/*----------------------------------------------
 -- queries verzendlijsten bedankingsmails giften
 ------------------------------------------------
 -- totaal
-SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE '%3941%' -- totaal aantal giften + totaal bedrag
+SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE 'F-03333%' -- totaal aantal giften + totaal bedrag
 -- via post	
-SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam, achternaam, 
+SELECT DISTINCT partner_id, COUNT(partner_id) aantal, SUM(amount) bedrag, /*description,*/ project,  naam, voornaam, achternaam, 
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
 	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE '%3941%' 
+WHERE project_code LIKE 'F-03333%' 
 	AND NOT(COALESCE(email,'__') LIKE '%@%') -- geen email adres
 	AND overleden = 'false' 
 	AND adres_status::numeric <> 2 -- niet 'adres verkeerd'
-	AND post_ontvangen = 'JA' 
-GROUP BY partner_id,  amount, description, project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
+	AND post_ontvangen = 'JA'
+	AND COALESCE(nooit_contacteren,'false') = 'false'
+	AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
+GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 ORDER BY partner_id	
 -- via mail
-SELECT DISTINCT partner_id, amount bedrag, description, project,  naam, voornaam, achternaam, 
+SELECT DISTINCT partner_id, COUNT(partner_id) aantal, SUM(amount) bedrag, /*description,*/ project,  naam, voornaam, achternaam, 
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
 	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE '%3941%' 
+WHERE project_code LIKE 'F-03333%' 
 	AND COALESCE(email,'__') LIKE '%@%' -- wel email adres
 	AND overleden = 'false' 
 	AND email_ontvangen = 'JA' 
-GROUP BY partner_id,  amount, description, project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
+	AND COALESCE(nooit_contacteren,'false') = 'false'
+	AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
+GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
 ORDER BY partner_id	
-*/	
+--*/	
 	
 /*
 SELECT * FROM tempGIFTEN
