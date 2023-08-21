@@ -12,7 +12,7 @@
 DROP TABLE IF EXISTS myvar;
 SELECT 
 	'2022-07-01'::date AS startdatum,
-	'2023-04-14'::date AS einddatum,
+	'2023-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -291,13 +291,32 @@ UPDATE tempGIFTEN SET bus = '' WHERE bus IS NULL;
 UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;	
 UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
 UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
+
+
+
+SELECT sq1.partner_id, sq1.date, sq1.amount bedrag, sq1.voornaam, sq1.achternaam, sq1.straat, sq1.huisnummer, sq1.bus, sq1.postcode, sq1.gemeente woonplaats, sq1.land, sq1.email,
+	sq1.project_code, sq1.project, sq1.description,
+	sq1.email_ontvangen, sq1.post_ontvangen, sq1.nooit_contacteren, sq1.overleden,
+    CASE WHEN COALESCE(sq2.erp_id,0) > 0 THEN 'deelnemer' ELSE 'donateur' END _type, 
+	e.campaign route, e.project team, e.external_reference koalect_projectcode, e.benefiting koalect_project,
+	sq1.d_id erp_transactiecode, e."ID" transactiecode , e.*
+FROM
+    (SELECT CASE 
+            WHEN g.description LIKE 'STICHTING DERDENGELDEN BUCKAROO%' 
+            THEN regexp_replace(g.description, '\D','','g')::numeric 
+            ELSE 0 END d_id, 
+        g.*
+    FROM tempGIFTEN g
+    WHERE LOWER(description) LIKE '%exp%') sq1
+    FULL OUTER JOIN marketing._m_dwh_koalectv2expeditie e ON e."ID" = sq1.d_id
+    LEFT OUTER JOIN (SELECT * FROM marketing._m_dwh_warmecontacten WHERE bron = 'deelnemers expeditie') sq2 ON sq2.erp_id = sq1.partner_id
 /*
 SELECT *
 FROM tempGIFTEN g
 	JOIN marketing._m_dwh_waarnemingenbe_nieuwsbrief wn ON wn.partner_id = g.partner_id
 	JOIN marketing._m_dwh_donateursprofiel dp ON dp.parnter_id = g.pa
 */
---/*----------------------------------------------
+/*----------------------------------------------
 -- queries verzendlijsten bedankingsmails giften
 ------------------------------------------------
 -- totaal
@@ -329,7 +348,7 @@ WHERE project_code LIKE 'F-03333%'
 	AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
 GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
 ORDER BY partner_id	
---*/	
+*/	
 	
 /*
 SELECT * FROM tempGIFTEN
