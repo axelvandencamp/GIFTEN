@@ -11,7 +11,7 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2022-07-01'::date AS startdatum,
+	'2021-11-01'::date AS startdatum,
 	'2023-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
@@ -326,13 +326,13 @@ SELECT DISTINCT partner_id, COUNT(partner_id) aantal, SUM(amount) bedrag, /*desc
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
 	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE 'F-03333%' 
+WHERE /*project_code LIKE 'F-03333%' 
 	AND NOT(COALESCE(email,'__') LIKE '%@%') -- geen email adres
-	AND overleden = 'false' 
+	AND*/ overleden = 'false' 
 	AND adres_status::numeric <> 2 -- niet 'adres verkeerd'
 	AND post_ontvangen = 'JA'
 	AND COALESCE(nooit_contacteren,'false') = 'false'
-	AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
+	--AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
 GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 ORDER BY partner_id	
 -- via mail
@@ -452,15 +452,19 @@ WHERE amount >= 40
 --lijst unieke donateurs
 ------------------------
 /*
-SELECT DISTINCT partner_id, sum(amount) bedrag, jaar, min(date) min_date, max(date) max_date, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status
+SELECT DISTINCT partner_id, sum(amount) bedrag, jaar, min(date) min_date, max(date) max_date, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren, lidnummer, huidige_lidmaatschap_status
 --SELECT *
 FROM tempGIFTEN 
 --WHERE postcode IN ('3070','3071','3078','1910','3020','1820','1800','1830','1831','1930','1932','1933','3000','3001','3010','3012','3018','3060','3061','3040','3150','3090','3091','3080','1000','1020','1050','1120','1130')
 --WHERE provincie in ('Antwerpen','Oost-Vlaanderen')
-WHERE project_code LIKE '%6617%' --AND naam LIKE 'Natuurpunt%'
+--WHERE project_code LIKE '%6617%' --AND naam LIKE 'Natuurpunt%'
 --WHERE LOWER(description) LIKE 'mangopay sa np exp%' OR LOWER(description) LIKE 'mangopay sanp exp%' OR LOWER(description) LIKE '%expeditie%'
 --WHERE grootboekrek = '732000'
-GROUP BY partner_id,  jaar, description, project,  aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
+WHERE overleden = 'false' 
+	AND adres_status::numeric <> 2 -- niet 'adres verkeerd'
+	AND post_ontvangen = 'JA'
+	AND COALESCE(nooit_contacteren,'false') = 'false'
+GROUP BY partner_id,  jaar, aanspreking, geslacht, naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, overleden, adres_status, lidnummer, huidige_lidmaatschap_status, email_ontvangen, post_ontvangen, nooit_contacteren
 ORDER BY partner_id, jaar --WHERE partner_id IN ('94626','19544')
 --voor post overleden, post ontvangen en adres status uitfilteren
 --SELECT DISTINCT partner_id FROM tempGIFTEN
