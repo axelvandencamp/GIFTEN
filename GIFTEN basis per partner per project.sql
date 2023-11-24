@@ -1,9 +1,9 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS _av_myvar;
 CREATE TEMP TABLE _av_myvar (startdatum date, einddatum date, startdatum_groepering date);
-INSERT INTO _av_myvar (SELECT '2023-07-01' AS startdatum,
-							'2023-07-31' AS einddatum,
-					   		now()::date - INTERVAL '25 month' AS startdatum_groepering);
+INSERT INTO _av_myvar (SELECT '2023-10-01' AS startdatum,
+							'2023-10-31' AS einddatum,
+					   		now()::date - INTERVAL '13 month' AS startdatum_groepering);
 SELECT * FROM _av_myvar;
 --=========================================================--
 --CREATE TEMP TABLE
@@ -91,15 +91,17 @@ SELECT SQ2.*,
 		p.postbus_nbr postbus,
 		c.name land,
 		p.email, p.email_work,
+		p2.vrijwilliger, p2.bestuurder, p2.conservator, p2.aankoper,
 		CASE WHEN COALESCE(p.opt_out,'f') = 'f' THEN 'JA' WHEN p.opt_out = 't' THEN 'NEEN' ELSE 'JA' END email_ontvangen,
 		CASE WHEN COALESCE(p.opt_out_letter,'f') = 'f' THEN 'JA' WHEN p.opt_out_letter = 't' THEN 'NEEN' ELSE 'JA' END post_ontvangen,
 		p.iets_te_verbergen,
 		COALESCE(p.deceased,'f') overleden
 FROM res_partner p
 	JOIN
-	(SELECT partner_id, SUM(bedrag) bedrag, project_code, project, EXTRACT('year' FROM AGE(MAX(date),MIN(date))) periode_j, MAX(r) r
+	(SELECT partner_id, SUM(bedrag) bedrag, project_code, project, EXTRACT('year' FROM AGE(MAX(date),MIN(date))) periode_j,
+	 EXTRACT('year' FROM AGE(MAX(date),MIN(date)))*12 + EXTRACT('month' FROM AGE(MAX(date),MIN(date))) periode_m, MAX(r) r
 	FROM (
-			SELECT partner_id, bedrag, project_code, project, date,
+			SELECT partner_id, bedrag, project_code, project, date, 
 				ROW_NUMBER() OVER (PARTITION BY partner_id, project_code ORDER BY partner_id DESC) AS r 
 			FROM tempGIFTENperproject
 			--WHERE partner_id = 162441
@@ -109,5 +111,10 @@ FROM res_partner p
 	JOIN res_country c ON p.country_id = c.id
 	LEFT OUTER JOIN res_country_city_street ccs ON p.street_id = ccs.id
 	LEFT OUTER JOIN res_country_city cc ON p.zip_id = cc.id
-WHERE SQ2.periode_j >= 1
+	--erp_partner info
+	JOIN marketing._m_dwh_partners p2 ON p2.partner_id = p.id
+WHERE SQ2.periode_j >= 1 AND (SQ2.r/sq2.periode_m) >= 1
 ORDER BY r DESC;	
+
+
+--SELECT * FROM marketing._m_dwh_partners
