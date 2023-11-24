@@ -294,22 +294,7 @@ UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
 
 
 
-SELECT sq1.partner_id, sq1.date, sq1.amount bedrag, sq1.voornaam, sq1.achternaam, sq1.straat, sq1.huisnummer, sq1.bus, sq1.postcode, sq1.gemeente woonplaats, sq1.land, sq1.email,
-	sq1.project_code, sq1.project, sq1.description,
-	sq1.email_ontvangen, sq1.post_ontvangen, sq1.nooit_contacteren, sq1.overleden,
-    CASE WHEN COALESCE(sq2.erp_id,0) > 0 THEN 'deelnemer' ELSE 'donateur' END _type, 
-	e.campaign route, e.project team, e.external_reference koalect_projectcode, e.benefiting koalect_project,
-	sq1.d_id erp_transactiecode, e."ID" transactiecode , e.*
-FROM
-    (SELECT CASE 
-            WHEN g.description LIKE 'STICHTING DERDENGELDEN BUCKAROO%' 
-            THEN regexp_replace(g.description, '\D','','g')::numeric 
-            ELSE 0 END d_id, 
-        g.*
-    FROM tempGIFTEN g
-    WHERE LOWER(description) LIKE '%exp%') sq1
-    FULL OUTER JOIN marketing._m_dwh_koalectv2expeditie e ON e."ID" = sq1.d_id
-    LEFT OUTER JOIN (SELECT * FROM marketing._m_dwh_warmecontacten WHERE bron = 'deelnemers expeditie') sq2 ON sq2.erp_id = sq1.partner_id
+
 /*
 SELECT *
 FROM tempGIFTEN g
