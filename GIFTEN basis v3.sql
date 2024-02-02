@@ -11,7 +11,7 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2021-11-01'::date AS startdatum,
+	'2022-11-01'::date AS startdatum,
 	'2023-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
@@ -321,17 +321,18 @@ WHERE /*project_code LIKE 'F-03333%'
 GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 ORDER BY partner_id	
 -- via mail
-SELECT DISTINCT partner_id, COUNT(partner_id) aantal, SUM(amount) bedrag, /*description,*/ project,  naam, voornaam, achternaam, 
+SELECT DISTINCT partner_id, jaar, COUNT(partner_id) aantal, SUM(amount) bedrag, /*description, project,*/  naam, voornaam, achternaam, 
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
-	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
+	straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status, overleden, adres_status, post_ontvangen, email_ontvangen, nooit_contacteren
 FROM tempGIFTEN 
-WHERE project_code LIKE 'F-03333%' 
-	AND COALESCE(email,'__') LIKE '%@%' -- wel email adres
+WHERE --project_code IN ('WVL-3506','WVL-3506-5501','P-20-20-000549')
+	postcode IN ('8870','2690','8691','8600','8950','8951','8952','8953','8954','8956','8650','8958','8900','8902','8904','8906','8908','8920','8647','8957','8770','8970','8972','8978','8640','8940','8980','8660','8620','8670','8560','8540','8970','8971','8972','8973','8930','8880','8860','8800','8520','8530','8531')
+	--AND COALESCE(email,'__') LIKE '%@%' -- wel email adres
 	AND overleden = 'false' 
-	AND email_ontvangen = 'JA' 
+	--AND email_ontvangen = 'JA' 
 	AND COALESCE(nooit_contacteren,'false') = 'false'
-	AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
-GROUP BY partner_id,  /*amount, description,*/ project,  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status--, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
+	--AND NOT(description LIKE 'STICHTING DERDENGELDEN BUCKAROO%')
+GROUP BY partner_id, jaar, /*amount, description, project,*/  naam, voornaam, achternaam, straat, huisnummer, bus, postcode, gemeente, provincie, land, email, afdeling, lidnummer, huidige_lidmaatschap_status, overleden, adres_status, email_ontvangen, post_ontvangen, nooit_contacteren
 ORDER BY partner_id	
 */	
 	
