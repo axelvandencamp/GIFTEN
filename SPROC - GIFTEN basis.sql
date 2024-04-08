@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION marketing._crm_giften(
     OUT opzegdatum date,
     OUT straat character varying,
     OUT huisnummer character varying,
-    OUT bus text,
+    OUT bus character varying,
     OUT postcode character varying,
     OUT gemeente character varying,
     OUT postbus character varying,
@@ -91,7 +91,7 @@ BEGIN
 			WHEN c.id = 21 AND p.crab_used = 'true' THEN p.street_nbr ELSE ''
 		END huisnummer, 
 		CASE
-			WHEN LENGTH(p.street_bus) > 0 THEN 'bus ' || p.street_bus ELSE ''
+			WHEN LENGTH(p.street_bus) > 0 THEN p.street_bus ELSE ''
 		END bus,
 		CASE
 			WHEN c.id = 21 AND p.crab_used = 'true' THEN cc.zip
