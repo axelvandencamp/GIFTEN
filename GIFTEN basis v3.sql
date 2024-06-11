@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2022-11-01'::date AS startdatum,
-	'2023-12-31'::date AS einddatum,
+	'2023-11-01'::date AS startdatum,
+	'2024-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -52,6 +52,7 @@ CREATE TEMP TABLE tempGIFTEN (
 	postbus text,
 	provincie text,
 	land text,
+	rijksregisternummer text,
 	geboorte_datum date,
 	naam_partner text,
 	adres_status text,
@@ -125,6 +126,7 @@ INSERT INTO tempGIFTEN
 			ELSE 'andere'
 		END AS provincie,
 		c.name land,
+	 	p.national_id_nbr,
 		p.birthday,
 		a5.name partner_naam,
 		COALESCE(p.address_state_id,0) adres_status,
@@ -231,6 +233,7 @@ INSERT INTO tempGIFTEN
 			ELSE 'andere'
 		END AS provincie,
 		c.name land,
+	 	p.national_id_nbr,
 		p.birthday,
 		a5.name,
 		COALESCE(p.address_state_id,0) adres_status,
@@ -292,12 +295,9 @@ UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;
 UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
 UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
 
-
-
-
 /*
 SELECT *
-FROM tempGIFTEN g
+FROM tempGIFTEN g 
 	JOIN marketing._m_dwh_waarnemingenbe_nieuwsbrief wn ON wn.partner_id = g.partner_id
 	JOIN marketing._m_dwh_donateursprofiel dp ON dp.parnter_id = g.pa
 */
