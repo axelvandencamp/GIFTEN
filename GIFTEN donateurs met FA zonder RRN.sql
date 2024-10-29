@@ -53,6 +53,7 @@ INSERT INTO _temp
 SELECT p.id partner_id, SUM(t.bedrag) bedrag,
 	COALESCE(p.first_name,'') as voornaam,
 	COALESCE(p.last_name,'') as achternaam,
+	p.corporation_type_id,
 	CASE WHEN c.id = 21 AND p.crab_used = 'true' THEN COALESCE(ccs.name,'') ELSE COALESCE(p.street,'') END straat,
 	CASE WHEN c.id = 21 AND p.crab_used = 'true' THEN COALESCE(p.street_nbr,'') ELSE '' END huisnummer, 
 	COALESCE(p.street_bus,'') bus,
@@ -60,7 +61,9 @@ SELECT p.id partner_id, SUM(t.bedrag) bedrag,
 	CASE WHEN c.id = 21 THEN COALESCE(cc.name,'') ELSE COALESCE(p.city,'') END woonplaats,
 	_crm_land(c.id) land,
 	COALESCE(COALESCE(p.email,p.email_work),'') email,
-	COALESCE(p.national_id_nbr,'') RRN, p.tax_certificate
+	COALESCE(p.national_id_nbr,'') RRN, 
+	COALESCE(p.company_registration_number,'') as "ON",
+	p.tax_certificate
 FROM res_partner p
 	JOIN _temp t ON t.partner_id = p.id
 	--land, straat, gemeente info
@@ -72,6 +75,6 @@ WHERE t.bedrag >= 40
 	AND p.tax_certificate
 	AND COALESCE(p.organisation_type_id,0) = 0
 GROUP BY p.id,
-	p.name, p.first_name, p.last_name, c.id, ccs.name, p.street, p.crab_used, p.street_nbr, p.street_bus, cc.zip, cc.name, p.city, p.email, p.email_work;
+	p.name, p.first_name, p.last_name, p.corporation_type_id, c.id, ccs.name, p.street, p.crab_used, p.street_nbr, p.street_bus, cc.zip, cc.name, p.city, p.email, p.email_work;
 ---
 DROP TABLE IF EXISTS _temp;	
