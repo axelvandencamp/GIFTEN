@@ -11,7 +11,7 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2023-11-01'::date AS startdatum,
+	'2024-01-01'::date AS startdatum,
 	'2024-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
@@ -305,7 +305,7 @@ FROM tempGIFTEN g
 -- queries verzendlijsten bedankingsmails giften
 ------------------------------------------------
 -- totaal
-SELECT COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN WHERE project_code LIKE 'F-03333%' -- totaal aantal giften + totaal bedrag
+SELECT partner_id, naam, COUNT(partner_id) aantal, SUM(amount) bedrag FROM tempGIFTEN GROUP BY partner_id, naam WHERE project_code LIKE 'F-03333%' -- totaal aantal giften + totaal bedrag
 -- via post	
 SELECT DISTINCT partner_id, COUNT(partner_id) aantal, SUM(amount) bedrag, /*description,*/ project,  naam, voornaam, achternaam, 
 	straat || CASE WHEN LENGTH(COALESCE(huisnummer,'_'))>0 THEN ' '||huisnummer ELSE '' END || CASE WHEN LENGTH(COALESCE(bus,'_'))>0 THEN '/'||bus ELSE '' END  adres,
