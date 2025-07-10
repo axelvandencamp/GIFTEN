@@ -11,8 +11,8 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2024-01-01'::date AS startdatum,
-	'2024-12-31'::date AS einddatum,
+	'2025-01-01'::date AS startdatum,
+	'2025-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
 	'16980'::numeric AS testID
@@ -50,6 +50,7 @@ CREATE TEMP TABLE tempGIFTEN (
 	postcode text, 
 	gemeente text, 
 	postbus text,
+	--provincie_state text,
 	provincie text,
 	land text,
 	rijksregisternummer text,
@@ -113,7 +114,12 @@ INSERT INTO tempGIFTEN
 			WHEN c.id = 21 THEN cc.name ELSE p.city 
 		END gemeente,
 		p.postbus_nbr postbus,
-		CASE
+		CASE WHEN COALESCE(c.id,0) = 21 AND p.zip = '2070' THEN 'Oost-Vlaanderen'
+			WHEN COALESCE(c.id,0) = 21 THEN cs.name
+			WHEN COALESCE(c.id,0) = 166 THEN 'Nederland'
+			ELSE 'Buitenland niet NL' 
+		END provincie_state,
+		/*CASE
 			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 1000 AND 1299 THEN 'Brussel' 
 			WHEN p.country_id = 21 AND (substring(p.zip from '[0-9]+')::numeric BETWEEN 1500 AND 1999 OR substring(p.zip from '[0-9]+')::numeric BETWEEN 3000 AND 3499) THEN 'Vlaams Brabant'
 			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 2000 AND 2999  THEN 'Antwerpen' 
@@ -124,7 +130,7 @@ INSERT INTO tempGIFTEN
 			WHEN p.country_id = 166 THEN 'Nederland'
 			WHEN NOT(p.country_id IN (21,166)) THEN 'Buitenland niet NL'
 			ELSE 'andere'
-		END AS provincie,
+		END AS provincie,*/
 		c.name land,
 	 	p.national_id_nbr,
 		p.birthday,
@@ -164,7 +170,8 @@ INSERT INTO tempGIFTEN
 		LEFT OUTER JOIN account_analytic_account aaa3 ON aml.analytic_dimension_3_id = aaa3.id
 
 		JOIN res_company rc ON aml.company_id = rc.id 
-		JOIN res_country c ON p.country_id = c.id
+		LEFT OUTER JOIN res_country_state cs ON cs.id = p.state_id
+		LEFT OUTER JOIN res_country c ON p.country_id = c.id
 		LEFT OUTER JOIN res_country_city_street ccs ON p.street_id = ccs.id
 		LEFT OUTER JOIN res_country_city cc ON p.zip_id = cc.id
 		LEFT OUTER JOIN res_partner_title pt ON p.title = pt.id
@@ -220,7 +227,12 @@ INSERT INTO tempGIFTEN
 			WHEN c.id = 21 THEN cc.name ELSE p.city 
 		END gemeente,
 		p.postbus_nbr postbus,
-		CASE
+		CASE WHEN COALESCE(c.id,0) = 21 AND p.zip = '2070' THEN 'Oost-Vlaanderen'
+			WHEN COALESCE(c.id,0) = 21 THEN cs.name
+			WHEN COALESCE(c.id,0) = 166 THEN 'Nederland'
+			ELSE 'Buitenland niet NL' 
+		END provincie_state,
+		/*CASE
 			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 1000 AND 1299 THEN 'Brussel' 
 			WHEN p.country_id = 21 AND (substring(p.zip from '[0-9]+')::numeric BETWEEN 1500 AND 1999 OR substring(p.zip from '[0-9]+')::numeric BETWEEN 3000 AND 3499) THEN 'Vlaams Brabant'
 			WHEN p.country_id = 21 AND substring(p.zip from '[0-9]+')::numeric BETWEEN 2000 AND 2999  THEN 'Antwerpen' 
@@ -231,7 +243,7 @@ INSERT INTO tempGIFTEN
 			WHEN p.country_id = 166 THEN 'Nederland'
 			WHEN NOT(p.country_id IN (21,166)) THEN 'Buitenland niet NL'
 			ELSE 'andere'
-		END AS provincie,
+		END AS provincie,*/
 		c.name land,
 	 	p.national_id_nbr,
 		p.birthday,
@@ -266,7 +278,8 @@ INSERT INTO tempGIFTEN
 	FROM myvar v, res_partner p
 		JOIN res_partner_payment_history pph ON pph.partner_id = p.id
 		LEFT OUTER JOIN res_partner_title pt ON p.title = pt.id
-		JOIN res_country c ON p.country_id = c.id
+		LEFT OUTER JOIN res_country_state cs ON cs.id = p.state_id
+		LEFT OUTER JOIN res_country c ON p.country_id = c.id
 		LEFT OUTER JOIN res_country_city_street ccs ON p.street_id = ccs.id
 		LEFT OUTER JOIN res_country_city cc ON p.zip_id = cc.id
 		--afdeling vs afdeling eigen keuze
