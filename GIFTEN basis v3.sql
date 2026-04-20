@@ -11,7 +11,7 @@
 --SET VARIABLES
 DROP TABLE IF EXISTS myvar;
 SELECT 
-	'2024-01-01'::date AS startdatum,
+	'2025-01-01'::date AS startdatum,
 	'2025-12-31'::date AS einddatum,
 	'2012-01-01'::date AS startdatumbosvooriedereen,
 	'2013-01-01'::date AS startdatumalledonateurs,
@@ -423,6 +423,11 @@ UPDATE tempGIFTEN SET bus = '' WHERE bus IS NULL;
 UPDATE tempGIFTEN SET huisnummer = '' WHERE huisnummer IS NULL;	
 UPDATE tempGIFTEN SET email = '' WHERE email IS NULL;	
 UPDATE tempGIFTEN SET lidnummer = '' WHERE lidnummer IS NULL;
+
+/*SELECT ROW_NUMBER() OVER (PARTITION BY g.partner_id, g.date ORDER BY g.boeking DESC) AS r
+	,g.*
+FROM tempGIFTEN g
+ORDER BY partner_id;*/
 
 /*
 SELECT *
